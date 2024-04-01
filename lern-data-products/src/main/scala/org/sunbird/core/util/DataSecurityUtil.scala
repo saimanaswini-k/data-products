@@ -145,6 +145,9 @@ object DataSecurityUtil {
     JobLogger.log(s"zipAndPasswordProtect for url=$url and filename=$filename, level=$level", None, INFO)(new String())
     var resultFile = ""
     if (level.nonEmpty) {
+      val accountKey = storageConfig.accountKey.getOrElse("")
+      val secretKey = storageConfig.secretKey.getOrElse("")
+      JobLogger.log(s"zipAndPasswordProtect for storageConfig.store=${storageConfig.store} and accountKey=$accountKey, secretKey=$secretKey", None, INFO)(new String())
       val storageService = fc.getStorageService(storageConfig.store, storageConfig.accountKey.getOrElse(""), storageConfig.secretKey.getOrElse(""));
       var pathTuple : (String, String, String) =  ("","","")
       if (level == "PASSWORD_PROTECTED_DATASET" || level == "PLAIN_DATASET") {

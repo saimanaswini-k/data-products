@@ -4,11 +4,11 @@ import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Encoders, SparkSession}
-import org.ekstep.analytics.framework.Level.INFO
+import org.ekstep.analytics.framework.Level.{ERROR, INFO}
 import org.ekstep.analytics.framework.conf.AppConf
 import org.ekstep.analytics.framework.util.{CommonUtil, JobLogger}
 import org.ekstep.analytics.framework.{FrameworkContext, StorageConfig}
-import org.sunbird.core.util.DataSecurityUtil.{zipAndPasswordProtect}
+import org.sunbird.core.util.DataSecurityUtil.zipAndPasswordProtect
 
 import java.sql.{Connection, DriverManager, PreparedStatement, Timestamp}
 import java.util.Properties
@@ -146,6 +146,8 @@ trait OnDemandExhaustJob {
             if(canZipExceptionBeIgnored()) {
               url
             } else {
+              JobLogger.log(s"processRequestEncryption Zip, encrypt and upload failed, error message=${ex.getMessage}", None, ERROR)(new String())
+              JobLogger.log(s"processRequestEncryption Zip, encrypt and upload failed, print error stack=${ex.printStackTrace}", None, ERROR)(new String())
               markRequestAsFailed(request, "Zip, encrypt and upload failed")
               ""
             }
