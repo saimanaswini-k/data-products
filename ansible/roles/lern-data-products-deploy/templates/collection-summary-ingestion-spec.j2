@@ -230,13 +230,18 @@
     "ioConfig": {
       "type": "index",
       "firehose": {
+{% if cloud_service_provider == "azure" %}
         "type": "static-azure-blobstore",
         "blobs": [
           {
-            "container": "reports",
+            "container": "{{reports_container}}",
             "path": "/collection-summary-reports-v2/collection-summary-report-latest.json"
           }
         ],
+{% elif (cloud_service_provider == "oci") %}
+         "type": "static-s3",
+         "uris": [ "s3://{{reports_container}}/collection-summary-reports-v2/collection-summary-report-latest.json"],
+{% endif %}
         "fetchTimeout": 300000
       }
     },

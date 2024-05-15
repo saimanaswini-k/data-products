@@ -88,7 +88,7 @@ druid_report_url : "{{ proto}}://{{domain_name}}/api/data/v1/"
 druid_report_token : "Bearer {{ sunbird_api_auth_token }}"
 
 #redis multiprocess config
-user_port: 6381
+user_port: 6379
 
 exhaust_job_assessment_primary_category: "Practice Question Set"
 etb_dialcode_list_druid_length: 70
