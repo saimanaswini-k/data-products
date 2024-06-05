@@ -57,7 +57,7 @@ class TestDeleteUsersAssetReportJob extends SparkSpec(null) with MockFactory {
 
 
   "DeletedUsersAssetsReportJob" should "generate reports" in {
-    val strConfig = """{"search":{"type":"none"},"model":"org.sunbird.userorg.job.report.DeletedUsersAssetsReportJob","modelParams":{"configuredUserId":[],"configuredOrganisationId":"","configuredChannel":[]}}"""
+    val strConfig = """{"search":{"type":"none"},"model":"org.sunbird.userorg.job.report.DeletedUsersAssetsReportJob","modelParams":{"configuredUserId":"","configuredOrganisationId":"","configuredChannel":""}}"""
     DeletedUsersAssetsReportJob.main(strConfig)
   }
 
