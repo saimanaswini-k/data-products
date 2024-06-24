@@ -26,29 +26,29 @@
     - dataproducts
 
 - name: Copy configuration file
-  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lern{{ env }}.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lern-{{ env }}.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags:
     - dataproducts
     - lern-dataproducts
     - framework
   when: dockdataproducts is undefined
 
-- name: Copy configuration file as lern-application.conf for cluster
-  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lernapplication.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+- name: Copy dock configuration file
+  template: src=dock-common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/dock-{{ env }}.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags:
-    - framework-spark-cluster
+    - dataproducts
+    - dock-dataproducts
+    - framework
+  when: dockdataproducts is defined
 
-- name: Update spark temp dir value for cluster
-  lineinfile:
-    path: '{{ analytics.home }}/models-{{ model_version }}/lernapplication.conf'
-    regexp: '^spark_output_temp_dir="/mount/data/analytics/tmp/"'
-    line: 'spark_output_temp_dir="/var/log/sparkapp/tmp/"'
+- name: Copy configuration file as lern-application.conf for cluster
+  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lern-application.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags:
     - framework-spark-cluster
 
 - name: Update logger kafka config for cluster
   lineinfile:
-    path: '{{ analytics.home }}/models-{{ model_version }}/lernapplication.conf'
+    path: '{{ analytics.home }}/models-{{ model_version }}/lern-application.conf'
     regexp: '^log.appender.kafka.enable="false"'
     line: 'log.appender.kafka.enable="true"'
   tags:
@@ -69,9 +69,15 @@
 
 - name: Copy Scripts
   template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
-  with_items: "{{ analytics.scripts }}"
+  with_items: "{{ analytics.lernScripts }}"
   tags: [ dataproducts, framework, lern-dataproducts ]
   when: dockdataproducts is undefined
+
+- name: Copy Dock Scripts
+  template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+  with_items: "{{ analytics.dockScripts }}"
+  tags: [ dataproducts, framework, dock-dataproducts ]
+  when: dockdataproducts is defined
 
 - name: Copy python sanity check script file
   template: src=exhaust_sanity_check.py.j2 dest={{ analytics.home }}/scripts/exhaust_sanity_check.py
@@ -85,6 +91,14 @@
     - update-config
     - lern-dataproducts
   when: dockdataproducts is undefined
+
+- name: Update dock model config
+  template: src=dock-model-config.j2 dest={{ analytics.home }}/scripts/dock-model-config.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+  tags:
+    - dataproducts
+    - update-config
+    - dock-dataproducts
+  when: dockdataproducts is defined
 
 - name: Copy submit-all-jobs ruby file
   template: src=submit-all-jobs.rb.j2 dest={{ analytics.home }}/scripts/submit-all-jobs.rb mode=755 owner={{ analytics_user }} group={{ analytics_group }}

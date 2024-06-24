@@ -50,7 +50,7 @@ jobs:
             cd sunbird-core-dataproducts && mvn install -DskipTests
       - run:
           name: Lern-data-products-build
-          no_output_timeout: 20m
+          no_output_timeout: 30m
           command: |
             echo $(java -version)
             cd lern-data-products && mvn scoverage:report -DCLOUD_STORE_GROUP_ID=$CLOUD_STORE_GROUP_ID -DCLOUD_STORE_ARTIFACT_ID=$CLOUD_STORE_ARTIFACT_ID -DCLOUD_STORE_VERSION=$CLOUD_STORE_VERSION
