@@ -112,7 +112,7 @@ object SourcingMetrics extends IJob with BaseReportsJob {
       if(count > 0) {
         val textbookRdd = textbookHierarchy.as[ContentHierarchy](encoders).first()
         val textbookHierarchyStr = textbookRdd.hierarchy
-        if(textbookHierarchyStr.isBlank) {
+        if(textbookHierarchyStr.isEmpty || textbookHierarchyStr == null) {
           JobLogger.log(s"SourcingMetrics::getTextbookInfo hierarchy is empty for identifier: ${textbook.identifier}",None, Level.INFO)
         }
         val hierarchy = JSONUtils.deserialize[TextbookHierarchy](textbookHierarchyStr)
