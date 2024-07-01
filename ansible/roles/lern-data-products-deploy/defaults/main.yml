@@ -27,8 +27,8 @@ channel: dev-test
 druid_broker_host: "{{groups['raw-broker'][0]}}"
 druid_router_host: "{{groups['raw-router'][0]}}"
 druid_rollup_broker_host: "{{groups['raw-broker'][0]}}"
-hierarchySearchServiceUrl: "{{ proto }}://{{ domain_name }}/action/content"
-hierarchySearchServicEndpoint: /v3/hierarchy/
+hierarchySearchServiceUrl: "http://{{ private_ingressgateway_ip }}/content"
+hierarchySearchServicEndpoint: /collection/v4/hierarchy/
 
 user_table_keyspace: "sunbird"
 course_keyspace: "sunbird_courses"
@@ -182,7 +182,8 @@ analytics:
   home: /mount/data/analytics
   soft_path: /mount/data/analytics
   paths: ['/mount/data/analytics', '/mount/data/analytics/logs', '/mount/data/analytics/logs/services', '/mount/data/analytics/logs/data-products', '/mount/data/analytics/logs/lern-data-products', '/mount/data/analytics/tmp', '/mount/data/analytics/scripts', '/mount/data/analytics/models' ]
-  scripts: ['lern-model-config', 'lern-replay-job', 'replay-updater', 'replay-utils', 'lern-run-job', 'submit-job', 'start-jobmanager', 'submit-script']
+  lernScripts: ['lern-model-config', 'lern-replay-job', 'replay-updater', 'replay-utils', 'lern-run-job', 'submit-job', 'start-jobmanager', 'submit-script']
+  dockScripts: ['dock-model-config','dock-run-job']
 
 # artifact versions
 analytics_core_artifact_ver: "2.0"

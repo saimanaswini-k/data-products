@@ -205,14 +205,6 @@ dcetextbook.filename="DCE_textbook_data.csv"
 etbtextbook.filename="ETB_textbook_data.csv"
 etb.dialcode.druid.length={{ etb_dialcode_list_druid_length }}
 
-{% if cloud_service_provider == "azure" %}
-druid.report.default.storage="azure"
-{% elif (cloud_service_provider == "oci" or cloud_service_provider == "s3") %}
-druid.report.default.storage="s3"
-{% endif %}
-
-druid.report.date.format="yyyy-MM-dd"
-
 ## Collection Exhaust Jobs Configuration -- Start ##
 
 sunbird.user.keyspace="{{ user_table_keyspace }}"
@@ -248,5 +240,5 @@ sunbird.course.redis.host={{ groups['redisall'][0] }}
 sunbird.course.redis.port=6379
 sunbird.course.redis.relationCache.id=5
 
-org.search.private.api.url="{{ org_search_service_private_endpoint }}"
-tenant.pref.read.private.api.url="{{ tenant_preferance_read_private_service_endpoint }}"
+org.search.private.api.url="{{ core_org_search_service_private_endpoint }}"
+tenant.pref.read.private.api.url="{{ core_tenant_preferance_read_private_service_endpoint }}"
