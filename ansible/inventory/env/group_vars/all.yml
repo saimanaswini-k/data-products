@@ -72,7 +72,10 @@ default_channel: "{{default_org_hash_id}}"
 sunbird_es_host: "{{groups['core-es']| join(',')}}"
 single_node_es_host: "{{ groups['core-es'][0] }}"
 
+#Druid Proxy APi service
+sunbird_druid_broker_host: "http://{{ groups['raw-broker'][0] }}"
 sunbird_learner_service_url: "http://{{private_ingressgateway_ip}}/userorg"
+core_sunbird_learner_service_url: "http://{{core_private_ingressgateway_ip}}/userorg"
 
 druid_report_url : "{{ proto}}://{{domain_name}}/api/data/v1/"
 
@@ -92,7 +95,9 @@ s3_default_bucket_location: ""
 s3_storage_container: ""
 
 org_search_service_private_endpoint: "{{sunbird_learner_service_url}}/private/v2/org/search"
+core_org_search_service_private_endpoint: "{{core_sunbird_learner_service_url}}/private/v2/org/search"
 tenant_preferance_read_private_service_endpoint: "{{sunbird_learner_service_url}}/private/v2/org/preferences/read"
+core_tenant_preferance_read_private_service_endpoint: "{{core_sunbird_learner_service_url}}/private/v2/org/preferences/read"
 
 cloud_storage_report_verfication_bucketname: "report-verification"
 dp_storage_endpoint_config: "{{s3_storage_endpoint}}"

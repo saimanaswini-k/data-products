@@ -9,7 +9,7 @@ source lern-model-config.sh
 today=$(date "+%Y-%m-%d")
 
 libs_path="{{ analytics.home }}/models-{{ model_version }}/lern-data-products-1.0"
-file_path="lern{{ env }}.conf"
+file_path="lern-{{ env }}.conf"
 
 get_report_job_model_name(){
   case "$1" in
@@ -54,6 +54,14 @@ get_report_job_model_name(){
     "old-certificate-migration-job") echo 'org.sunbird.lms.audit.OldCertificateMigrationJob'
     ;;
     "program-user-exhaust") echo 'org.sunbird.ml.exhaust.ProgramUserInfoExhaustJob'
+    ;;
+    "etb-metrics") echo 'org.sunbird.ed.job.report.ETBMetricsJob'
+  	;;
+    "funnel-report") echo 'org.sunbird.sourcing.FunnelReport'
+    ;;
+    "sourcing-metrics") echo 'org.sunbird.sourcing.SourcingMetrics'
+    ;;
+    "content-details") echo 'org.sunbird.sourcing.ContentDetailsReport'
     ;;
     *) echo $1
     ;;

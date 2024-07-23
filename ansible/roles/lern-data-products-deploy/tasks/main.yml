@@ -1,9 +1,39 @@
 ## Data products deployment ##
 
+- name: Ensure oci oss bucket exists
+  command: "/home/{{analytics_user}}/bin/oci os bucket get --name {{ bucket }}"
+  register: check_bucket
+  when: dp_object_store_type == "oci"
+  tags:
+    - always
+
+- name: Create oci oss bucket 
+  command: "/home/{{analytics_user}}/bin/oci os bucket create -c {{oci_bucket_compartment}} --name {{bucket}}"
+  when: dp_object_store_type == "oci" and check_bucket.rc !=0
+  tags:
+    - always
+
 - name: Copy Core Data Products
   copy: src={{ analytics_batch_module_artifact }} dest={{ analytics.home }}/models-{{ model_version }}
   tags:
     - dataproducts
+
+- name: Copy Core Data Products to azure blob
+  command: az storage blob upload --overwrite -c {{ bucket }} --name models-{{ model_version }}/{{ analytics_batch_module_artifact }} -f {{ analytics.home }}/models-{{ model_version }}/{{ analytics_batch_module_artifact }}
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "azure"
+  tags:
+    - dataproducts-spark-cluster 
+
+- name: Copy Core Data Products to oci oss
+  command: /home/{{analytics_user}}/bin/oci os object put -bn {{ bucket }} --name models-{{ model_version }}/{{ analytics_batch_module_artifact }} --file {{ analytics.home }}/models-{{ model_version }}/{{ analytics_batch_module_artifact }} --force
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "oci"
+  tags:
+    - dataproducts-spark-cluster 
+
 
 - name: Unarchive LERN Data Products
   become: yes
@@ -11,15 +41,63 @@
   tags:
     - lern-dataproducts
 
+- name: Copy Ed Data Products to azure blob
+  command: az storage blob upload --overwrite -c {{ bucket }} --name models-{{ model_version }}/lern-data-products-1.0.jar -f {{ analytics.home }}/models-{{ model_version }}/lern-data-products-1.0/lern-data-products-1.0.jar
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "azure"
+  tags:
+    - lern-dataproducts-spark-cluster
+
+- name: Copy Ed Data Products to oci oss
+  command: /home/{{analytics_user}}/bin/oci os object put -bn {{ bucket }} --name models-{{ model_version }}/data-products-1.0.jar --file {{ analytics.home }}/models-{{ model_version }}/data-products-1.0/data-products-1.0.jar --force
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "oci"
+  tags:
+    - lern-dataproducts-spark-cluster 
+
 - name: Copy Framework Library
   copy: src={{ analytics_core_artifact }} dest={{ analytics.home }}/models-{{ model_version }}
   tags:
     - framework
 
+- name: Copy Framework Library to azure blob
+  command: az storage blob upload --overwrite --debug -c {{ bucket }} --name models-{{ model_version }}/{{ analytics_core_artifact }} -f {{ analytics.home }}/models-{{ model_version }}/{{ analytics_core_artifact }}
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "azure"
+  tags:
+    - framework-spark-cluster
+
+- name: Copy Framework Library to oci oss
+  command: /home/{{analytics_user}}/bin/oci os object put -bn {{ bucket }} --name models-{{ model_version }}/{{ analytics_core_artifact }} --file {{ analytics.home }}/models-{{ model_version }}/{{ analytics_core_artifact }} --force
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "oci"
+  tags:
+    - framework-spark-cluster
+
 - name: Copy Scruid Library
   copy: src={{ scruid_artifact }} dest={{ analytics.home }}/models-{{ model_version }}
   tags:
-    - framework
+    - framework  
+
+- name: Copy Scruid Library to azure blob
+  command: az storage blob upload --overwrite -c {{ bucket }} --name models-{{ model_version }}/{{ scruid_artifact }} -f {{ analytics.home }}/models-{{ model_version }}/{{ scruid_artifact }}
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "azure"
+  tags:
+    - framework-spark-cluster
+
+- name: Copy Scruid Library to oci oss
+  command: /home/{{analytics_user}}/bin/oci os object put -bn {{ bucket }} --name models-{{ model_version }}/{{ scruid_artifact }} --file {{ analytics.home }}/models-{{ model_version }}/{{ scruid_artifact }} --force
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "oci"
+  tags:
+    - framework-spark-cluster 
 
 - name: Copy Job Manager
   copy: src={{ analytics_job_manager_artifact }} dest={{ analytics.home }}/models-{{ model_version }}
@@ -27,29 +105,29 @@
     - dataproducts
 
 - name: Copy configuration file
-  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lern{{ env }}.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lern-{{ env }}.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags:
     - dataproducts
     - lern-dataproducts
     - framework
   when: dockdataproducts is undefined
 
-- name: Copy configuration file as lern-application.conf for cluster
-  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lernapplication.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+- name: Copy dock configuration file
+  template: src=dock-common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/dock-{{ env }}.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags:
-    - framework-spark-cluster
+    - dataproducts
+    - dock-dataproducts
+    - framework
+  when: dockdataproducts is defined
 
-- name: Update spark temp dir value for cluster
-  lineinfile:
-    path: '{{ analytics.home }}/models-{{ model_version }}/lernapplication.conf'
-    regexp: '^spark_output_temp_dir="/mount/data/analytics/tmp/"'
-    line: 'spark_output_temp_dir="/var/log/sparkapp/tmp/"'
+- name: Copy configuration file as lern-application.conf for cluster
+  template: src=common.conf.j2 dest={{ analytics.home }}/models-{{ model_version }}/lern-application.conf mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags:
     - framework-spark-cluster
 
 - name: Update logger kafka config for cluster
   lineinfile:
-    path: '{{ analytics.home }}/models-{{ model_version }}/lernapplication.conf'
+    path: '{{ analytics.home }}/models-{{ model_version }}/lern-application.conf'
     regexp: '^log.appender.kafka.enable="false"'
     line: 'log.appender.kafka.enable="true"'
   tags:
@@ -64,15 +142,29 @@
     - lern-dataproducts-spark-cluster
     - framework-spark-cluster    
 
+- name: Copy configuration file to oci oss
+  command: /home/{{analytics_user}}/bin/oci os object put -bn {{ bucket }} --file {{ analytics.home }}/models-{{ model_version }}/application.conf --name models-{{ model_version }}/application.conf --force
+  async: 3600
+  poll: 10
+  when: dp_object_store_type == "oci"
+  tags:
+    - framework-spark-cluster  
+    
 - name: Copy log4j2 xml file
   template: src=log4j2.xml.j2 dest={{ analytics.home }}/models-{{ model_version }}/log4j2.xml mode=755 owner={{ analytics_user }} group={{ analytics_group }}
   tags: [ dataproducts, framework, lern-dataproducts ]
 
 - name: Copy Scripts
   template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
-  with_items: "{{ analytics.scripts }}"
+  with_items: "{{ analytics.lernScripts }}"
   tags: [ dataproducts, framework, lern-dataproducts ]
   when: dockdataproducts is undefined
+
+- name: Copy Dock Scripts
+  template: src={{ item }}.j2 dest={{ analytics.home }}/scripts/{{ item }}.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+  with_items: "{{ analytics.dockScripts }}"
+  tags: [ dataproducts, framework, dock-dataproducts ]
+  when: dockdataproducts is defined
 
 - name: Copy python sanity check script file
   template: src=exhaust_sanity_check.py.j2 dest={{ analytics.home }}/scripts/exhaust_sanity_check.py
@@ -86,6 +178,14 @@
     - update-config
     - lern-dataproducts
   when: dockdataproducts is undefined
+
+- name: Update dock model config
+  template: src=dock-model-config.j2 dest={{ analytics.home }}/scripts/dock-model-config.sh mode=755 owner={{ analytics_user }} group={{ analytics_group }}
+  tags:
+    - dataproducts
+    - update-config
+    - dock-dataproducts
+  when: dockdataproducts is defined
 
 - name: Copy submit-all-jobs ruby file
   template: src=submit-all-jobs.rb.j2 dest={{ analytics.home }}/scripts/submit-all-jobs.rb mode=755 owner={{ analytics_user }} group={{ analytics_group }}

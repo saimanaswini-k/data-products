@@ -59,6 +59,24 @@
   tags:
     - run-job
 
+- name: Dock Run Job
+  become: yes
+  become_user: "{{ analytics_user }}"
+  shell: "nohup {{ analytics.home }}/scripts/dock-run-job.sh {{ job_id }} {{ batch_id }} {{ keyword }} &"
+  async: "{{ (pause_min * 60) }}"
+  poll: 0
+  tags:
+    - dock-run-job
+
+- name: Generate Metrics
+  become: yes
+  become_user: "{{ analytics_user }}"
+  shell: "nohup {{ analytics.home }}/scripts/generate-metrics.sh > {{ analytics.home }}/logs/business_metrics_result.log &"
+  async: "{{ (pause_min * 60) }}"
+  poll: 0
+  tags:
+    - generate-metrics
+
 - name: Submit Job
   become: yes
   become_user: "{{ analytics_user }}"

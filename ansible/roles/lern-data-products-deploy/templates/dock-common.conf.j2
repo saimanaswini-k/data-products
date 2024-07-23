@@ -2,16 +2,18 @@ application.env="{{ env }}"
 telemetry.version="2.1"
 default.parallelization="10"
 spark_output_temp_dir="/mount/data/analytics/tmp/"
+lp.url="{{lp_url}}"
 service.search.url="{{ service.search.url }}"
 service.search.path="{{ service.search.path }}"
 spark.cassandra.connection.host="{{groups['dp-cassandra'][0]}}"
 cassandra.keyspace_prefix="{{ cassandra_keyspace_prefix }}"
+cassandra.hierarchy_store_prefix="{{ cassandra_hierarchy_store_prefix }}"
+
 
 storage.key.config="{{ dp_storage_key_config }}"
 storage.secret.config="{{ dp_storage_secret_config }}"
 reports.storage.key.config="{{ dp_reports_storage_key_config }}"
 reports.storage.secret.config="{{ dp_reports_storage_secret_config }}"
-
 cloud_storage_type="{{cloud_service_provider}}"
 
 {% if cloud_service_provider == "oci" %}
@@ -36,16 +38,17 @@ spark.driver.memory=6g
 
 spark.memory_fraction={{ spark.memory_fraction }}
 spark.storage_fraction={{ spark.storage_fraction }}
-spark.driver_memory="{{ spark.driver_memory }}"
+spark.driver_memory="{{ spark.driver_memory }}" 
 
 #Monitor Jobs
+
 monitor {
   notification {
     webhook_url = "{{ data_exhaust_webhook_url }}"
     channel = "{{ data_exhaust_Channel }}"
     token = "{{ data_exhaust_token }}"
     slack = true
-    name = "{{ data_exhaust_name }}"
+        name = "{{ data_exhaust_name }}"
   }
 }
 
@@ -69,6 +72,7 @@ cloud.container.reports="{{reports_container}}"
 # course metrics container
 course.metrics.cassandra.sunbirdKeyspace="sunbird"
 course.metrics.cassandra.sunbirdCoursesKeyspace="sunbird_courses"
+course.metrics.cassandra.sunbirdHierarchyStore="{{ cassandra_hierarchy_store_keyspace }}"
 course.metrics.cloud.objectKey=""
 course.metrics.cassandra.input.consistency="QUORUM"
 es.host="http://{{groups['core-es'][0]}}"
@@ -172,6 +176,26 @@ postgres.db="{{postgres.db_name}}"
 postgres.url="jdbc:postgresql://{{postgres.db_url}}:{{postgres.db_port}}/"
 postgres.user="{{postgres.db_username}}"
 postgres.pass="{{postgres.db_password}}"
+postgres.program.table="program"
+postgres.nomination.table="nomination"
+postgres.usertable="\"V_User\""
+postgres.org.table="\"V_User_Org\""
+
+druid.ingestion.path="/druid/indexer/v1/task"
+druid.segment.path="/druid/coordinator/v1/metadata/datasources/"
+druid.deletesegment.path="/druid/coordinator/v1/datasources/"
+
+postgres.druid.db="{{ druid_report_postgres_db_name }}"
+postgres.druid.url="jdbc:postgresql://{{postgres.db_url}}:{{postgres.db_port}}/"
+postgres.druid.user="{{ druid_report_postgres_db_username }}"
+postgres.druid.pass="{{ dp_vault_druid_postgress_pass }}"
+
+
+location.search.url="https://{{location_search_url}}/v1/location/search"
+location.search.token="{{ location_search_token }}"
+location.search.request="{\"request\": {\"filters\": {\"type\" :[\"state\",\"district\"]},\"limit\" : 10000}}"
+
+druid.state.lookup.url = "http://{{groups['raw-coordinator'][0]}}:8081/druid/coordinator/v1/lookups/config/__default/stateSlugLookup"
 
 sunbird_encryption_key="{{ core_vault_sunbird_encryption_key }}"
 
@@ -181,16 +205,8 @@ dcetextbook.filename="DCE_textbook_data.csv"
 etbtextbook.filename="ETB_textbook_data.csv"
 etb.dialcode.druid.length={{ etb_dialcode_list_druid_length }}
 
-{% if cloud_service_provider == "azure" %}
-druid.report.default.storage="azure"
-{% elif (cloud_service_provider == "oci" or cloud_service_provider == "s3") %}
-druid.report.default.storage="s3"
-{% endif %}
-
-druid.report.date.format="yyyy-MM-dd"
-druid.report.default.container="{{cloud_storage_report_verfication_bucketname}}"
-
 ## Collection Exhaust Jobs Configuration -- Start ##
+
 sunbird.user.keyspace="{{ user_table_keyspace }}"
 sunbird.courses.keyspace="{{ course_keyspace }}"
 sunbird.content.hierarchy.keyspace="{{ cassandra_hierarchy_store_keyspace }}"
@@ -205,6 +221,7 @@ collection.exhaust.store.prefix=""
 ml.exhaust.store.prefix="ml_reports"
 postgres.table.job_request="{{ job_request_table }}"
 postgres.table.dataset_metadata="{{ dataset_metadata_table }}"
+
 ## Collection Exhaust Jobs Configuration -- End ##
 
 ## Exhaust throttling variables
@@ -216,24 +233,12 @@ exhaust.user.parallelism={{ exhaust_user_parallelism }}
 
 data_exhaust.batch.limit.per.request={{ data_exhaust_batch_limit_per_request }}
 
+
+
 sunbird.course.optionalnodes="optionalnodes"
 sunbird.course.redis.host={{ groups['redisall'][0] }}
 sunbird.course.redis.port=6379
 sunbird.course.redis.relationCache.id=5
 
-org.search.private.api.url="{{ org_search_service_private_endpoint }}"
-tenant.pref.read.private.api.url="{{ tenant_preferance_read_private_service_endpoint }}"
-
-framework_read_api = "{{ framework_read_endpoint }}"
-taxonomy.basePath = "{{ domain_url }}"
-sunbird_instance_name="{{ sunbird_installation | default('Sunbird')}}"
-
-redis.user.database.index="{{ redis.user.index }}"
-redis.user.input.index="{{ redis.user.input_index }}"
-redis.max.pipeline.size="{{ redis.max_pipeline_size }}"
-redis.scan.count="{{ redis.scan_count }}"
-redis.user.backup.dir="{{ redis.user.backup_dir }}"
-
-cassandra.read.timeoutMS="{{ cassandra.read_timeout }}"
-cassandra.query.retry.count="{{ cassandra.retry_count }}"
-cassandra.input.consistency.level="{{ core_cassandra_read_consistency }}"
+org.search.private.api.url="{{ core_org_search_service_private_endpoint }}"
+tenant.pref.read.private.api.url="{{ core_tenant_preferance_read_private_service_endpoint }}"

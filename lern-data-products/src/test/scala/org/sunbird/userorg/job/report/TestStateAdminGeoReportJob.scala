@@ -65,7 +65,7 @@ class TestStateAdminGeoReportJob extends SparkSpec(null) with MockFactory {
   }
   // TODO: Fix the testcase
   //"StateAdminGeoReport" should "execute main method" in {
-  ignore should "execute main method" in {
+    ignore should "execute main method" in {
     implicit val fc = new FrameworkContext()
     val modelParams = Map[String, AnyRef]("adhoc_scripts_virtualenv_dir" -> "/mount/venv",
       "adhoc_scripts_output_dir" -> "/mount/portal_data")

@@ -2,7 +2,7 @@ package org.sunbird.core.util
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.ekstep.analytics.framework.Level.{ERROR, INFO}
 import org.ekstep.analytics.framework.util.DatasetUtil.extensions
 import org.ekstep.analytics.framework.util.{JSONUtils, JobLogger, MergeUtil, RestUtil}
@@ -10,10 +10,9 @@ import org.ekstep.analytics.framework.{FrameworkContext, MergeConfig, MergeFiles
 import org.ekstep.analytics.model.{OutputConfig, ReportConfig}
 import org.sunbird.cloud.storage.conf.AppConf
 
-import scala.collection.immutable.List
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Future, _}
+import scala.concurrent._
 
 //Getting live courses from compositesearch
 case class CourseDetails(result: Result)
@@ -42,6 +41,7 @@ object CourseUtils {
   implicit val className: String = "org.sunbird.core.util.CourseUtils"
   val defaultContentStatus: Array[String] = Array("Live", "Unlisted", "Retired")
   val defaultContentFields: Array[String] = Array("identifier","name","organisation","channel","status","keywords","createdFor","medium","subject")
+  var storageConfig: StorageConfig = _
 
   def getCourse(config: Map[String, AnyRef])(implicit fc: FrameworkContext, sparkSession: SparkSession): DataFrame = {
     import sparkSession.implicits._
@@ -77,6 +77,7 @@ object CourseUtils {
   }
 
   def postDataToBlob(data: DataFrame, outputConfig: OutputConfig, config: Map[String, AnyRef])(implicit sc: SparkContext, fc: FrameworkContext) = {
+    JobLogger.log("CourseDetails: postDataToBlob started", None, INFO)
     val configMap = config("reportConfig").asInstanceOf[Map[String, AnyRef]]
     val reportConfig = JSONUtils.deserialize[ReportConfig](JSONUtils.serialize(configMap))
 
@@ -94,18 +95,31 @@ object CourseUtils {
 
   def saveReport(data: DataFrame, config: Map[String, AnyRef], reportConfig: ReportConfig)(implicit sc: SparkContext, fc: FrameworkContext): Unit = {
     val container = config.getOrElse("container", "test-container").toString
-    val storageConfig = StorageConfig(config.getOrElse("store", "local").toString, container, config.getOrElse("filePath", "/tmp/druid-reports").toString, config.get("accountKey").asInstanceOf[Option[String]], config.get("accountSecret").asInstanceOf[Option[String]])
+    val storageKeyConfig = config.getOrElse("storageKeyConfig", "").asInstanceOf[String];
+    val storageSecretConfig = config.getOrElse("storageSecretConfig", "").asInstanceOf[String];
+    JobLogger.log(s"saveReport storageKeyConfig: $storageKeyConfig, storageSecretConfig: $storageSecretConfig", None, INFO)
+    JobLogger.log(s"saveReport config: $config ", None, INFO)
+    val provider = config.getOrElse("store", "local").toString
+    if (storageKeyConfig != null && storageSecretConfig.nonEmpty) {
+      storageConfig = StorageConfig(provider, container, config.getOrElse("filePath", "/tmp/druid-reports").toString, Option(AppConf.getConfig(storageKeyConfig)), Option(AppConf.getConfig(storageSecretConfig)))
+    } else {
+      storageConfig = StorageConfig(provider, container, config.getOrElse("filePath", "/tmp/druid-reports").toString, Option(provider), Option(provider));
+    }
+    //storageConfig = StorageConfig(config.getOrElse("store", "local").toString, container, config.getOrElse("filePath", "/tmp/druid-reports").toString, config.get("storageKeyConfig").asInstanceOf[Option[String]], config.get("storageSecretConfig").asInstanceOf[Option[String]])
+    JobLogger.log(s"saveReport account details: " + storageConfig.accountKey.getOrElse("NA") + " " + storageConfig.secretKey.getOrElse("NA"), None, INFO)
     val format = config.getOrElse("format", "csv").asInstanceOf[String]
     val key = config.getOrElse("key", null).asInstanceOf[String]
     val reportId = config.getOrElse("reportId", "").asInstanceOf[String]
     val fileParameters = config.getOrElse("fileParameters", List("")).asInstanceOf[List[String]]
     val dims = config.getOrElse("folderPrefix", List()).asInstanceOf[List[String]]
     val reportMergeConfig = reportConfig.mergeConfig
+    JobLogger.log(s"saveReport var details: container: $container, storageConfig: $storageConfig, format: $format, key: $key, reportId: $reportId, fileParameters: $fileParameters, dims: $dims", None, INFO)
     val deltaFiles = if (dims.nonEmpty) {
       data.saveToBlobStore(storageConfig, format, reportId, Option(Map("header" -> "true")), Option(dims))
     } else {
       data.saveToBlobStore(storageConfig, format, reportId, Option(Map("header" -> "true")), None)
     }
+    deltaFiles.foreach(f => JobLogger.log(s"Delta Files: $f", None, INFO))
     if(reportMergeConfig.nonEmpty) {
       val mergeConf = reportMergeConfig.get
       val reportPath = mergeConf.reportPath

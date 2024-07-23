@@ -32,7 +32,7 @@
     - framework-spark-cluster
 
 - name: Copy configuration file to azure blob
-  command: az storage blob upload --overwrite -c {{ bucket }} -f {{ analytics.home }}/models-{{ model_version }}/lernapplication.conf --name models-{{ model_version }}/lernapplication.conf
+  command: az storage blob upload --overwrite -c {{ bucket }} -f {{ analytics.home }}/models-{{ model_version }}/lern-application.conf --name models-{{ model_version }}/lern-application.conf
   async: 3600
   poll: 10
   tags:

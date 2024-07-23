@@ -1,3 +1,8 @@
+- name: Apply environment
+  apply:
+    environment:
+      OCI_CLI_AUTH: "instance_principal" # Used only for OCI
+
 - name: Ensure oci oss bucket exists
   command: oci os bucket get --name {{ oss_bucket_name }}
 

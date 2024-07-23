@@ -229,6 +229,7 @@
     },
     "ioConfig": {
       "type": "index",
+      "appendToExisting" : true,
       "firehose": {
 {% if cloud_service_provider == "azure" %}
         "type": "static-azure-blobstore",
@@ -238,7 +239,7 @@
             "path": "/collection-summary-reports-v2/collection-summary-report-latest.json"
           }
         ],
-{% elif (cloud_service_provider == "oci") %}
+{% else %}
          "type": "static-s3",
          "uris": [ "s3://{{reports_container}}/collection-summary-reports-v2/collection-summary-report-latest.json"],
 {% endif %}
